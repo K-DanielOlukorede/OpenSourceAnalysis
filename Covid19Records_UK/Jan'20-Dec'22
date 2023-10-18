@@ -1,0 +1,109 @@
+--- quick view of both tables
+
+select * from covidDeaths
+
+select * from covidVaccinations
+
+
+--- verify relationship between both tables
+
+select distinct(iso_code) from covidDeaths
+order by 1
+
+select distinct(iso_code) from covidVaccinations
+order by 1
+
+/* ALL INSIGHTS COVERS DATA RECORDED BETWEEN JANUARY 2020 AND DECEMBER 2022
+
+INSIGHT 1: HOW MANY CASES WERE RECORDED IN UNITED KINGDOM IN THIS PERIOD?*/
+
+--select * from covidDeaths
+
+--select location, max(cast(total_cases as int)) as HighestCases, max(cast(total_deaths as int)) as HighestDeaths
+--from covidDeaths
+--group by location
+--order by 3 desc
+
+--select location, max(cast(total_cases as int)) as HighestCases, max(cast(total_deaths as int)) as HighestDeaths
+   --from covidDeaths
+--where location not in ('World', 'High income', 'Upper middle income', 'Europe', 'Asia', 'North America',
+   --'South America', 'Lower middle income', 'European Union')
+    --and location = 'United Kingdom'
+--group by location
+
+select 
+      location, max(cast(total_cases as int)) as HighestCases, max(cast(total_deaths as int)) as HighestDeaths
+from covidDeaths
+      where location = 'United Kingdom'
+group by location
+
+
+/* INSIGHT 2: NUMBER OF COVID TESTS VERSUS CASES RECORDED AND NUMBER OF DEATHS IN UK DURING THIS PERIOD*/
+
+select 
+      cd.location, max(cast(total_cases as int)) as CasesRecorded, 
+      max(cast(total_deaths as int)) NumberofDeaths, max(cast(total_tests as int)) as TestsRecorded
+from covidDeaths cd
+      join covidVaccinations cv
+on cd.iso_code = cv.iso_code
+      where cd.location = 'United Kingdom'
+group by cd.location
+
+
+/* INSIGHT 3: PERCENTAGE OF PATIENTS WHO DIED FROM THE UK POPULATION, DURING THIS PERIOD*/
+
+--select location, SUM(new_cases) as LatestTotalCases, 
+--SUM(new_deaths) as LatestTotalDeaths, SUM(new_deaths)/SUM(new_cases) *100 as DeathsfromCases
+--from covidDeaths
+--where location like 'United Kingdom'
+--group by location
+
+select 
+      location, population, SUM(new_cases) as LatestTotalCases, SUM(new_deaths) as LatestTotalDeaths, 
+      SUM(new_deaths)/SUM(new_cases) *100 as DeathsfromCases, SUM(new_deaths)/population*100 as DeathofPopulation
+from covidDeaths
+      where location like 'United Kingdom'
+group by location, population
+
+
+/* INSIGHT 4: NUMBER OF PATIENTS WHO GOT TESTED VERSUS PEOPLE WHO GOT VACCINATED*/
+
+select 
+      location, max(cast(total_tests as int)) as TestsRecorded, max(cast(total_vaccinations as int)) as TotalVaccinated,
+	 max(cast(total_tests as int)) - max(cast(total_vaccinations as int)) as GotTestedButNotVaccinated
+from covidVaccinations
+where location like 'United Kingdom'
+group by location
+
+
+/* INSIGHT 4: RECORD OF PATIENTS WHO GOT TESTED, CAUGHT COIVD-19, & DIED VERSUS PEOPLE WHO GOT VACCINATED & BOOSTER IN UK
+*/
+
+select 
+      cd.location, 
+max(cast(total_cases as int)) as CasesRecorded, 
+max(cast(total_deaths as int)) NumberofDeaths, max(cast(total_tests as int)) as TestsRecorded,
+max(cast(total_vaccinations as int)) as TotalVaccinated, 
+max(cast(people_fully_vaccinated as int)) as FullyVaccinated,
+max(cast(total_boosters as int)) as TotalPatientsBoosted
+      from covidDeaths cd
+ join covidVaccinations cv
+on cd.iso_code = cv.iso_code
+      where cd.location = 'United Kingdom'
+group by cd.location
+
+
+/* INSIGHT 5: PERCENTAGE OF UK POPULATION THAT HAS GOTTEN THE BOOSTER */ 
+---Patients fully vaccinated versus boosted
+
+select 
+      cd.location, population, 
+max(cast(people_fully_vaccinated as bigint)) as FullyVaccinated,
+max(cast(total_boosters as bigint)) as TotalPatientsBoosted,
+max(cast(people_fully_vaccinated as bigint)) - max(cast(total_boosters as bigint)) as PatientsNotBoosted,
+(max(cast(total_boosters as bigint))/population)*100 as PercentageofPatientsBoosted
+      from covidDeaths cd
+ join covidVaccinations cv
+on cd.iso_code = cv.iso_code
+      where cd.location = 'United Kingdom'
+group by cd.location, population
